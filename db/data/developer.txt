@@ -1,0 +1,9 @@
+1001	Cleo	t
+1002	Vanessa	f
+1003	Mike	f
+1004	Kurt	f
+5124	Doug	f
+5145	Lindsay	f
+5293	Devin	f
+5311	Sergei	f
+5339	Rob	f

@@ -1,0 +1,7 @@
+5311	duplicate customers script	95	play	3	d
+5311	virtual stand-up	100	done	0	d
+5311	data warehouse	5	pause	2	m
+5311	cruise search	100	done	0	d
+5124	test project #1	10	pause	5	d
+5124	test project #2	20	pause	1	w
+5124	test project #3	70	play	2	d

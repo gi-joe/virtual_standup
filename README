@@ -1,0 +1,20 @@
+
+folders:
+    - db (database code)
+        - create (tables and one stored procedure)
+        - data (initial/test data)
+
+    - www (html/php code)
+        - img (project status images)
+
+comments:
+    - the app relies on a db called virtual_standup
+    - the app's web folder can have any name (all content of folder called 'www' needs to go there)
+    - index.html is the app's access point
+    - cookies are used to remember login details
+    - the app looks sligtly sharper in FireFox than in Chrome (works the same in both)
+
+setup:
+    - /db/run.sql needs one change (new absolute path, it can be executed after that)
+    - /www/virtual_standup.php needs 3 lines changed: 139, 141, 142 (since it goes outside our network I made those blank)
+
