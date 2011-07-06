@@ -15,7 +15,7 @@ declare
    rec record;
 
 begin
-    -- xpath will find appropriate javascript object to update it
+    -- xpath will find the appropriate javascript object to update
     create temp table t (xpath varchar, attr varchar, value varchar);
 
     case _table
@@ -27,13 +27,9 @@ begin
             insert into t select '/developer/d[last()]', 'id', id;
             insert into t select '/developer/d[last()]', 'name', name;
 
-            insert into property (developer_id, name, value)  select id, 'background-color', 'white';
-            insert into t select '/developer/d[last()]/property/p[@name=''background-color'']', 'id', currval('property_id_seq');
-            insert into t select '/developer/d[last()]/property/p[@name=''background-color'']', 'value', 'white';
-
-            insert into property (developer_id, name, value)  select id, 'color', 'black';
-            insert into t select '/developer/d[last()]/property/p[@name=''color'']', 'id', currval('property_id_seq');
-            insert into t select '/developer/d[last()]/property/p[@name=''color'']', 'value', 'black';
+            insert into property (developer_id, name, value)  select id, 'header', 'background-color: white; color: black;';
+            insert into t select '/developer/d[last()]/property/p[@name=''header'']', 'id', currval('property_id_seq');
+            insert into t select '/developer/d[last()]/property/p[@name=''header'']', 'value', 'background-color: white; color: black;';
 
         when 'project' then
 

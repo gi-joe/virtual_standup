@@ -1,0 +1,15 @@
+
+fieldset {
+    -moz-border-radius: 10px;
+         border-radius: 10px;
+ -webkit-border-radius: 10px;
+
+  padding: 5;
+  width: 0;
+  border: 1px dashed #bbb;
+  color: brown;
+}
+
+a.fogbugz {color: gray}
+a.fogbugz:hover {color: blue}
+

@@ -13,14 +13,8 @@ function add_developer()
   var p = property.appendChild( xml.createElement('p') );
 
   p.setAttribute('id','');
-  p.setAttribute('name','background-color');
-  p.setAttribute('value','#efefef');
-
-  p = property.appendChild( xml.createElement('p') );
-
-  p.setAttribute('id','');
-  p.setAttribute('name','color');
-  p.setAttribute('value','#bfbfbf');
+  p.setAttribute('name','header');
+  p.setAttribute('value','background-color: #efefef; color: #bfbfbf;');
 
   xml.documentElement.appendChild(d);
 
@@ -67,9 +61,7 @@ function delete_developer ()
 
   xpath(xml, '/developer/d[@id='+id+']').setAttribute('delete','Deleting ...');
 
-  xpath(xml, '/developer/d[@id='+id+']/property/p[@name="background-color"]').setAttribute('value','#efefef');
-
-  xpath(xml, '/developer/d[@id='+id+']/property/p[@name="color"]').setAttribute('value','#bfbfbf');
+  xpath(xml, '/developer/d[@id='+id+']/property/p[@name="header"]').setAttribute('value','background-color: #efefef; color: #bfbfbf;');
 
   transform('index.xslt', xml, 'main');
 

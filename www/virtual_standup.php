@@ -7,7 +7,11 @@
   }
   else
   {
-    if ($_COOKIE['developer']) main(); else login();
+    if ( $_COOKIE['token'] )
+    {
+      if ( ok_db() and ok_fb() ) main(); else { setcookie('token', null, time() - 1, '/'); login(); }
+    }
+    else login();
   }
 ?>
 
@@ -35,6 +39,24 @@
     echo json_encode($a);
   }
 
+
+  function token()
+  {
+    header('Content-Type: application/json');
+    header('Pragma: no-cache');
+
+    echo json_encode( array( 'token' => $_COOKIE['token']));
+  }
+
+
+  function email()
+  {
+    header('Content-Type: application/json');
+    header('Pragma: no-cache');
+
+    echo json_encode( array( 'email' => $_COOKIE['email']));
+  }
+
 ?>
 
 
@@ -47,7 +69,7 @@
             xmlelement(
                 name developer,
                 xmlattributes( 'require' as login),
-              ( select xmlagg( xmlelement( name d, xmlattributes( d.id, d.name))) from developer d )
+              ( select xmlagg( xmlelement( name d, xmlattributes( d.id, d.name, d.fb_email as email))) from developer d where d.fb_email is not null )
             ) as xml;
     ";
 
@@ -59,7 +81,14 @@
 
   function cookie()
   {
-    setcookie('developer', $_POST['id'], time() + 60*60*24*30*12*10, '/');
+    $token = $_POST['token'];
+    $email = $_POST['email'];
+       $id = $_POST['id'];
+
+    $sql = "update developer set token = '{$token}' where id = {$id}"; query($sql);
+
+    setcookie('token', $token, time() + 60*60*24*30*12*10, '/');
+    setcookie('email', $email, time() + 60*60*24*30*12*10, '/');
 
     header('Location: index.html');
   }
@@ -67,7 +96,7 @@
 
   function logout()
   {
-    setcookie('developer', $_POST['id'], time() - 60*60*24*30*12*10, '/');
+    setcookie('token', $_POST['token'], time() - 60*60*24*30*12*10, '/');
 
     header('Location: index.html');
   }
@@ -75,13 +104,13 @@
 
   function main()
   {
-    $id = $_COOKIE['developer'];
+    $token = $_COOKIE['token'];
 
     $sql = "
         select
             xmlelement(
                 name developer,
-                xmlattributes({$id} as id),
+                xmlattributes( (select id from developer where token = '{$token}') as id),
 
                 xmlelement(
                     name misc,
@@ -105,7 +134,7 @@
                 ),
 
                 ( select xmlagg( xmlelement( name d,
-                                             xmlattributes( d.id, d.name, d.is_admin),
+                                             xmlattributes( d.id, d.name, d.is_admin, d.fb_id),
 
                                              xmlelement(
                                                  name project,
@@ -120,6 +149,7 @@
                                                  where p.developer_id = d.id ))
                 ))
                 from developer d )
+
             ) as xml
         ;
     ";
@@ -136,10 +166,10 @@
 
   function connection ($p = null)
   {
-    $host = $p[0] ? $p[0] : '';
+    $host = $p[0] ? $p[0] : '10.20.0.159';
   $dbname = $p[1] ? $p[1] : 'virtual_standup';
-    $user = $p[2] ? $p[2] : '';
-    $pass = $p[3] ? $p[3] : '';
+    $user = $p[2] ? $p[2] : 'dev_admin';
+    $pass = $p[3] ? $p[3] : 'l!3bg0tt';
 
     $c = pg_connect("host={$host} dbname={$dbname} user={$user} password={$pass}");
 
@@ -210,6 +240,38 @@
     $data = query($sql);
 
     json($data);
+  }
+
+?>
+
+
+<?
+
+  function ok_db()
+  {
+    $token = $_COOKIE['token'];
+
+    $sql = "select id from developer where token = '{$token}'";
+
+    $data = query($sql);
+
+    $a = pg_fetch_assoc($data);
+
+    return $a['id'] > 0;
+  }
+
+
+  function ok_fb()
+  {
+    $token = $_COOKIE['token'];
+
+    $f = fopen("http://fogbugz.perx.com/api.asp?token={$token}&cmd=listStatuses", 'rb');
+
+    $s = stream_get_contents($f);
+
+    fclose($f);
+
+    return !preg_match('/error/i', $s);
   }
 
 ?>

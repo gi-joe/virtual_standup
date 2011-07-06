@@ -1,18 +1,121 @@
 
-var xml, xsl, idx = 1;
+var api = 'http://fogbugz.perx.com/api.asp', token;
+
+var ready = { 'other': false,
+             'search': false,
+             'people': false };
+
+var xml, xsl, idx = 1, other, search, people;
 
 
 function page_setup()
 {
+  setTimeout('if ( !ready.other || !ready.search || !ready.people ) error("The page may need to be reloaded: Ctrl+R")', 3000);
+
+  get_token();
+
   $.ajax({
-       url: 'virtual_standup.php',
-     async: false,
-  dataType: 'xml',
-   success: function (data) {xml = data},
-     error: function (e) { error(e.responseText); }
+        url: 'virtual_standup.php',
+   dataType: 'xml',
+    success: function (data) { other = data; ready.other = true; ready_(); },
+      error: function (e) { error(e.responseText); }
   });
 
-  transform('index.xslt', xml, 'main');
+
+  // list user's filters
+  var prm = ['cmd=listFilters','token='+token ].join('&');
+
+  $.ajax({
+    url: api+'?'+prm,
+    dataType: 'xml',
+
+    success: function (data)
+    {
+      // remember user's current filter
+      var sFilter = xpath(data, '//filter[@status="current"]');
+          sFilter = sFilter ? sFilter.getAttribute('sFilter') : 'ez';
+
+      // set current filter to 'vs'
+      var prm = ['cmd=setCurrentFilter','token='+token,'sFilter=15' ].join('&');
+
+      $.ajax({
+        url: api+'?'+prm,
+        dataType: 'xml',
+
+        success: function (data)
+        {
+          // list cases
+          var prm = ['cmd=search','token='+token,'cols='+['sTitle','ixPersonAssignedTo','hrsElapsedExtra','hrsElapsed','hrsCurrEst'].join(',') ].join('&');
+
+          $.ajax({
+            url: api+'?'+prm,
+            dataType: 'xml',
+
+            success: function (data)
+            {
+              search = data; ready.search = true; ready_();
+
+              // set the original filter back
+              var prm = ['cmd=setCurrentFilter','token='+token,'sFilter='+sFilter ].join('&');
+
+              $.ajax({
+                    url: api+'?'+prm,
+               dataType: 'xml',
+                success: function (data) {},
+                  error: function (e) { error(e.responseText); }
+              });
+            },
+
+            error: function (e) { error(e.responseText); }
+          });
+        },
+
+        error: function (e) { error(e.responseText); }
+      });
+    },
+
+    error: function (e) { error(e.responseText); }
+  });
+
+
+  var prm = ['cmd=listPeople',
+           'token='+token ].join('&');
+  $.ajax({
+        url: api+'?'+prm,
+   dataType: 'xml',
+    success: function (data) { people = data; ready.people = true; ready_(); },
+      error: function (e) { error(e.responseText); }
+  });
+}
+
+
+function get_token()
+{
+  $.ajax({
+        url: 'virtual_standup.php',
+       data: {'cmd':'token'},
+   dataType: 'json',
+      async: false,
+    success: function (data) { token = data.token },
+      error: function (e) { error(e.responseText); }
+  });
+}
+
+
+function ready_()
+{
+  if ( ready.other
+    && ready.search
+    && ready.people ) { xml = join_xml(other, search, people); transform('index.xslt', xml, 'main'); }
+}
+
+
+function join_xml (m1, m2, m3)
+{
+  m1.documentElement.appendChild( m2.documentElement);
+  m1.documentElement.appendChild( m3.documentElement);
+
+  return m1;
 }
 
 
@@ -44,29 +147,29 @@ function edit (id)
 function back() { transform('index.xslt', xml, 'main') }
 
 
-function logout() { window.location.href = 'virtual_standup.php?cmd=logout' }
-
-
 function transform (url, x, i)
 {
   clear('error');
 
-  $.ajax({
-       url: url,
-     async: false,
-  dataType: 'xml',
-   success: function (data) {xsl = data},
-     error: function (e) { error('Document is not well formed: <b>'+url+'</b><br/>' + e.responseText); }
-  });
+  try{
+    $.ajax({
+         url: url,
+       async: false,
+    dataType: 'xml',
+     success: function (data) {xsl = data},
+       error: function (e) { error('Document is not well formed: <b>'+url+'</b><br/>' + e.responseText); }
+    });
 
-  var prc = new XSLTProcessor();
-      prc.importStylesheet(xsl);
+    var prc = new XSLTProcessor();
+        prc.importStylesheet(xsl);
 
-  var f = prc.transformToFragment(x, document),
-      d = document.getElementById(i);
+    var f = prc.transformToFragment(x, document),
+        d = document.getElementById(i);
 
-  d.innerHTML = '';
-  d.appendChild(f);
+    d.innerHTML = '';
+    d.appendChild(f);
+  }
+  catch(x) { error(x) }
 }
 
 

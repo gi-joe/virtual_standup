@@ -98,7 +98,7 @@ function update (id, table, field, property)
 
   if (table == 'developer') developer (id, table, field);
 
-  if (property != null) css (id, table, field, property);
+  if (property != null) css (id, table, field);
 
   clear();
 
@@ -130,16 +130,84 @@ function update (id, table, field, property)
 }
 
 
-function green (id, table, field)
+function assign (project, from, to)
+{
+  assign_(project, to);
+
+  clear();
+
+  $.ajax({
+     url: 'virtual_standup.php',
+    type: 'post',
+    data: {
+        'cmd':'update',
+         'id': project,
+      'table':'project',
+      'field':'developer_id',
+      'value': to,
+    },
+    dataType: 'json',
+
+    success: function (err_msg)
+    {
+      if (err_msg)
+      {
+        assign_(project, from);
+
+        error(err_msg);
+      }
+      else
+      {
+        try { green ('tr', project, ''); } catch(x) { }
+      }
+    },
+
+    error: function (e)
+    {
+      assign_(project, from);
+
+      error(e.responseText);
+    }
+  });
+}
+
+
+function assign_ (p, d)
+{
+  var path1 =   '//project/p[@id='+p+']',
+      path2 = '//developer/d[@id='+d+']/project';
+
+  var p1 = xpath(xml, path1),
+      p2 = xpath(xml, path2).appendChild( p1.cloneNode(true) );
+
+  p1.parentNode.removeChild(p1);
+
+  transform('index.xslt', xml, 'main');
+}
+
+
+function green (id, table, field, color)
 {
   var element = [id, table, field].join(''),
-       object = document.getElementById(element);
+       object = document.getElementById(element),
+           bc = object.style.backgroundColor;
 
   switch (object.tagName)
   {
+    case 'TR':
+      object.style.backgroundColor = '#dfd';
+      setTimeout('try { document.getElementById("'+element+'").style.backgroundColor = "'+bc+'" } catch(x) {}', 400);
+      break;
+
+    case 'TD':
+      color = color ? color : '#dfd';
+      object.style.backgroundColor = color;
+      setTimeout('try { document.getElementById("'+element+'").style.backgroundColor = "'+bc+'" } catch(x) {}', 400);
+      break;
+
     case 'INPUT':
       object.style.backgroundColor = '#dfd';
-      setTimeout('try { document.getElementById("'+element+'").style.backgroundColor = "#fff" } catch(x) {}', 400);
+      setTimeout('try { document.getElementById("'+element+'").style.backgroundColor = "'+bc+'" } catch(x) {}', 400);
       break;
 
     case 'SELECT':
@@ -178,9 +246,21 @@ function css (id, table, field, property)
 {
   var element = [id, table, field].join(''),
        object = document.getElementById(element),
-        value = object.value,
-           th = document.getElementById('developername');
+        value = object.value.split(';'),
+           th = document.getElementById('developername'),
+          map = {};
 
-  $(th).css( property, value);
+  for (var i=0; i<value.length; i++)
+  {
+    if (value[i].indexOf(':') != -1)
+    {
+      var key = value[i].split(':')[0].replace(/^\s+|\s+$/ig, ''),
+          val = value[i].split(':')[1].replace(/^\s+|\s+$/ig, '');
+
+      map[key] = val;
+    }
+  }
+
+  $(th).css( map);
 }
 
